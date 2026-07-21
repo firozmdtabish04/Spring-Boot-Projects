@@ -1,6 +1,7 @@
 package com.example.demo.dto.request;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.example.demo.enums.EmployeeStatus;
 import com.example.demo.enums.Gender;
@@ -33,7 +34,7 @@ public class EmployeeRequest {
 
 	@NotNull
 	private Long departmentId;
-
+	private List<Long> projectIds;
 	@NotNull
 	private Long designationId;
 
@@ -76,6 +77,31 @@ public class EmployeeRequest {
 		this.status = status;
 		this.departmentId = departmentId;
 		this.designationId = designationId;
+	}
+
+	public EmployeeRequest(@NotBlank String name, @Email String email, @Size(min = 10, max = 10) String phone,
+			@Positive Double salary, LocalDate joiningDate, Gender gender, EmployeeStatus status,
+			@NotNull Long departmentId, List<Long> projectIds, @NotNull Long designationId, AddressRequest address) {
+		super();
+		this.name = name;
+		this.email = email;
+		this.phone = phone;
+		this.salary = salary;
+		this.joiningDate = joiningDate;
+		this.gender = gender;
+		this.status = status;
+		this.departmentId = departmentId;
+		this.projectIds = projectIds;
+		this.designationId = designationId;
+		this.address = address;
+	}
+
+	public List<Long> getProjectIds() {
+		return projectIds;
+	}
+
+	public void setProjectIds(List<Long> projectIds) {
+		this.projectIds = projectIds;
 	}
 
 	public EmployeeRequest() {

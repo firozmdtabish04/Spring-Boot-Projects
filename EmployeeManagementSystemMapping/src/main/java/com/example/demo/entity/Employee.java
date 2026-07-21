@@ -1,6 +1,8 @@
 package com.example.demo.entity;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.example.demo.enums.EmployeeStatus;
 import com.example.demo.enums.Gender;
@@ -17,14 +19,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,19 +58,22 @@ public class Employee {
 	private String email;
 
 	@NotBlank(message = "Phone is required")
-	@Size(min = 10, max = 10)
+	@Pattern(regexp = "^[6-9]\\d{9}$", message = "Phone number must be 10 digits")
 	@Column(nullable = false, unique = true)
 	private String phone;
 
+	@NotNull(message = "Salary is required")
 	@Positive(message = "Salary must be positive")
 	private Double salary;
 
 	@PastOrPresent
 	private LocalDate joiningDate;
 
+	@NotNull
 	@Enumerated(EnumType.STRING)
 	private Gender gender;
 
+	@NotNull
 	@Enumerated(EnumType.STRING)
 	private EmployeeStatus status;
 
@@ -83,5 +91,11 @@ public class Employee {
 	@JoinColumn(name = "address_id")
 	@JsonManagedReference
 	private Address address;
+
+	@ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+	@JoinTable(name = "employee_project", joinColumns = @JoinColumn(name = "employee_id"), inverseJoinColumns = @JoinColumn(name = "project_id"))
+	@JsonManagedReference
+	@Builder.Default
+	private List<Project> projects = new ArrayList<>();
 
 }
