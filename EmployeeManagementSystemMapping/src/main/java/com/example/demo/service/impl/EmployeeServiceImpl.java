@@ -1,5 +1,7 @@
 package com.example.demo.service.impl;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -127,5 +129,25 @@ public class EmployeeServiceImpl implements EmployeeService {
 				.orElseThrow(() -> new ResourceNotFoundException("Employee not found."));
 
 		employeeRepository.delete(employee);
+	}
+
+	@Override
+	public List<EmployeeResponse> getActiveEmployees() {
+
+		return employeeRepository.findActiveEmployees().stream().map(employeeMapper::toResponse).toList();
+	}
+
+	@Override
+	public List<EmployeeResponse> getEmployeesByDepartmentName(String departmentName) {
+
+		return employeeRepository.findEmployeesByDepartment(departmentName).stream().map(employeeMapper::toResponse)
+				.toList();
+	}
+
+	@Override
+	public List<EmployeeResponse> getEmployeesWithSalaryGreaterThan(Double salary) {
+
+		return employeeRepository.findEmployeesWithSalaryGreaterThan(salary).stream().map(employeeMapper::toResponse)
+				.toList();
 	}
 }

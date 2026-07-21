@@ -1,5 +1,7 @@
 package com.example.demo.service.interfaces;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -21,4 +23,11 @@ public interface EmployeeService {
 	EmployeeResponse updateEmployee(Long id, EmployeeRequest request);
 
 	void deleteEmployee(Long id);
+
+	// JPQL Methods
+	List<EmployeeResponse> getActiveEmployees();
+
+	List<EmployeeResponse> getEmployeesByDepartmentName(String departmentName);
+
+	List<EmployeeResponse> getEmployeesWithSalaryGreaterThan(Double salary);
 }

@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -74,13 +76,22 @@ public class EmployeeController {
 	}
 
 	@GetMapping("/salary")
-
 	public ResponseEntity<ApiResponse<List<EmployeeResponse>>> salaryGreaterThan(@RequestParam Double salary) {
 
 		return ResponseEntity.ok(
+				ApiResponse.<List<EmployeeResponse>>builder().success(true).message("Employees fetched successfully")
+						.data(employeeService.getEmployeesWithSalaryGreaterThan(salary)).build());
+	}
 
-				ApiResponse.<List<EmployeeResponse>>builder().success(true).message("Employees fetched")
-						.data(employeeService.getEmployeesWithSalary(salary)).build());
+	@GetMapping("/active")
+	public List<EmployeeResponse> getActiveEmployees() {
+		return employeeService.getActiveEmployees();
+	}
+
+	@GetMapping("/department-name")
+	public List<EmployeeResponse> getByDepartmentName(@RequestParam String departmentName) {
+
+		return employeeService.getEmployeesByDepartmentName(departmentName);
 	}
 
 }
