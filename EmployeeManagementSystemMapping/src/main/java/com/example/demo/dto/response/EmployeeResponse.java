@@ -31,5 +31,6 @@ public class EmployeeResponse {
 	private String departmentName;
 
 	private String designationName;
+	private AddressResponse address;
 
 }

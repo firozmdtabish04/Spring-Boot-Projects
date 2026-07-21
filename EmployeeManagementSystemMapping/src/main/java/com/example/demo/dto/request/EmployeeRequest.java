@@ -37,6 +37,32 @@ public class EmployeeRequest {
 	@NotNull
 	private Long designationId;
 
+	private AddressRequest address;
+
+	public AddressRequest getAddress() {
+		return address;
+	}
+
+	public void setAddress(AddressRequest address) {
+		this.address = address;
+	}
+
+	public EmployeeRequest(@NotBlank String name, @Email String email, @Size(min = 10, max = 10) String phone,
+			@Positive Double salary, LocalDate joiningDate, Gender gender, EmployeeStatus status,
+			@NotNull Long departmentId, @NotNull Long designationId, AddressRequest address) {
+		super();
+		this.name = name;
+		this.email = email;
+		this.phone = phone;
+		this.salary = salary;
+		this.joiningDate = joiningDate;
+		this.gender = gender;
+		this.status = status;
+		this.departmentId = departmentId;
+		this.designationId = designationId;
+		this.address = address;
+	}
+
 	public EmployeeRequest(@NotBlank String name, @Email String email, @Size(min = 10, max = 10) String phone,
 			@Positive Double salary, LocalDate joiningDate, Gender gender, EmployeeStatus status,
 			@NotNull Long departmentId, @NotNull Long designationId) {
