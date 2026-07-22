@@ -35,7 +35,9 @@ public class AuthServiceImpl implements AuthService {
 
 		userRepository.save(user);
 
-		return AuthResponse.builder().message("User registered successfully").build();
+		String token = jwtService.generateToken(user.getEmail());
+
+		return AuthResponse.builder().token(token).message("User registered successfully").build();
 	}
 
 	@Override
