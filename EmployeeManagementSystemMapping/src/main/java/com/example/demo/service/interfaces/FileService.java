@@ -19,4 +19,6 @@ public interface FileService {
 	void deleteFile(String fileName);
 
 	FileResponse getFile(String fileName);
+
+	List<FileResponse> uploadFiles(MultipartFile[] files);
 }

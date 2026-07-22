@@ -56,4 +56,10 @@ public class FileController {
 
 		return ResponseEntity.ok(fileService.getFile(fileName));
 	}
+
+	@PostMapping(value = "/upload/multiple", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<List<FileResponse>> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
+
+		return ResponseEntity.ok(fileService.uploadFiles(files));
+	}
 }

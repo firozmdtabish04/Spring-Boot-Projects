@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -150,5 +151,15 @@ public class FileServiceImpl implements FileService {
 				.storedFileName(document.getStoredFileName()).fileType(document.getFileType())
 				.fileSize(document.getFileSize()).uploadedAt(document.getUploadedAt())
 				.downloadUrl("/api/files/download/" + document.getStoredFileName()).build();
+	}
+
+	@Override
+	public List<FileResponse> uploadFiles(MultipartFile[] files) {
+
+		if (files == null || files.length == 0) {
+			throw new InvalidFileException("No files selected");
+		}
+
+		return Arrays.stream(files).map(this::uploadFile).toList();
 	}
 }
