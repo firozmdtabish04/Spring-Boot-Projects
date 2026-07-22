@@ -1,5 +1,7 @@
 package com.example.demo.service.impl;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ public class AuthServiceImpl implements AuthService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
+	private final AuthenticationManager authenticationManager;
 
 	@Override
 	public AuthResponse register(RegisterRequest request) {
@@ -43,12 +46,11 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public AuthResponse login(LoginRequest request) {
 
-		User user = userRepository.findByEmail(request.getEmail())
-				.orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
+		authenticationManager
+				.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-		if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-			throw new ResourceNotFoundException("Invalid email or password");
-		}
+		User user = userRepository.findByEmail(request.getEmail())
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		String token = jwtService.generateToken(user.getEmail());
 
