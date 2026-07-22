@@ -22,6 +22,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -97,5 +98,8 @@ public class Employee {
 	@JsonManagedReference
 	@Builder.Default
 	private List<Project> projects = new ArrayList<>();
+
+	@OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<FileDocument> documents = new ArrayList<>();
 
 }
