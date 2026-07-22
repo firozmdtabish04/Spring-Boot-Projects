@@ -1,3 +1,7 @@
+Swagger api
+http://localhost:8080/swagger-ui/index.html#
+
+
 # 🏥 Spring Boot Learning
 
 A comprehensive Spring Boot learning project built using Java, Spring Boot, Spring Data JPA, MySQL, and Maven. This project follows a clean layered architecture and demonstrates industry-standard backend development practices.
