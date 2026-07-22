@@ -6,10 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -19,10 +19,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.response.FileResponse;
+import com.example.demo.entity.FileDocument;
 import com.example.demo.exception.InvalidFileException;
+import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.repository.FileRepository;
 import com.example.demo.service.interfaces.FileService;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
 
 	private static final String UPLOAD_DIR = "uploads";
@@ -30,6 +36,8 @@ public class FileServiceImpl implements FileService {
 	private static final long MAX_SIZE = 5 * 1024 * 1024;
 
 	private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/png", "application/pdf");
+
+	private final FileRepository fileRepository;
 
 	@Override
 	public FileResponse uploadFile(MultipartFile file) {
@@ -56,43 +64,32 @@ public class FileServiceImpl implements FileService {
 
 			String originalName = file.getOriginalFilename();
 
-			String extension = originalName.substring(originalName.lastIndexOf("."));
+			String extension = "";
 
-			String newFileName = UUID.randomUUID() + extension;
+			if (originalName != null && originalName.contains(".")) {
+				extension = originalName.substring(originalName.lastIndexOf("."));
+			}
 
-			Files.copy(file.getInputStream(), uploadPath.resolve(newFileName), StandardCopyOption.REPLACE_EXISTING);
+			String storedFileName = UUID.randomUUID() + extension;
 
-			return new FileResponse(newFileName, file.getContentType(), file.getSize(),
-					"/api/files/download/" + newFileName);
+			Files.copy(file.getInputStream(), uploadPath.resolve(storedFileName), StandardCopyOption.REPLACE_EXISTING);
+
+			FileDocument document = FileDocument.builder().originalFileName(originalName).storedFileName(storedFileName)
+					.fileType(file.getContentType()).fileSize(file.getSize()).uploadedAt(LocalDateTime.now()).build();
+
+			document = fileRepository.save(document);
+
+			return mapToResponse(document);
 
 		} catch (IOException e) {
-			throw new RuntimeException("Upload failed");
+			throw new RuntimeException("Failed to upload file", e);
 		}
 	}
 
 	@Override
 	public List<FileResponse> getAllFiles() {
 
-		try {
-
-			Path uploadPath = Paths.get(UPLOAD_DIR);
-
-			if (!Files.exists(uploadPath)) {
-				Files.createDirectories(uploadPath);
-			}
-
-			return Files.list(uploadPath).map(path -> {
-				try {
-					return new FileResponse(path.getFileName().toString(), Files.probeContentType(path),
-							Files.size(path), "/api/files/download/" + path.getFileName().toString());
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			}).collect(Collectors.toList());
-
-		} catch (IOException e) {
-			throw new RuntimeException("Unable to read files");
-		}
+		return fileRepository.findAll().stream().map(this::mapToResponse).toList();
 	}
 
 	@Override
@@ -100,20 +97,22 @@ public class FileServiceImpl implements FileService {
 
 		try {
 
-			Path filePath = Paths.get(UPLOAD_DIR).resolve(fileName);
+			FileDocument document = fileRepository.findByStoredFileName(fileName)
+					.orElseThrow(() -> new ResourceNotFoundException("File not found"));
+
+			Path filePath = Paths.get(UPLOAD_DIR).resolve(document.getStoredFileName());
 
 			Resource resource = new UrlResource(filePath.toUri());
 
 			if (!resource.exists()) {
-				throw new RuntimeException("File not found");
+				throw new ResourceNotFoundException("File not found");
 			}
 
-			return ResponseEntity.ok()
-					.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-					.body(resource);
+			return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
+					"attachment; filename=\"" + document.getOriginalFileName() + "\"").body(resource);
 
 		} catch (MalformedURLException e) {
-			throw new RuntimeException("File not found");
+			throw new RuntimeException("Unable to download file", e);
 		}
 	}
 
@@ -122,31 +121,34 @@ public class FileServiceImpl implements FileService {
 
 		try {
 
-			Path filePath = Paths.get(UPLOAD_DIR).resolve(fileName);
+			FileDocument document = fileRepository.findByStoredFileName(fileName)
+					.orElseThrow(() -> new ResourceNotFoundException("File not found"));
+
+			Path filePath = Paths.get(UPLOAD_DIR).resolve(document.getStoredFileName());
 
 			Files.deleteIfExists(filePath);
 
+			fileRepository.delete(document);
+
 		} catch (IOException e) {
-			throw new RuntimeException("Unable to delete file");
+			throw new RuntimeException("Unable to delete file", e);
 		}
 	}
 
 	@Override
 	public FileResponse getFile(String fileName) {
 
-		try {
+		FileDocument document = fileRepository.findByStoredFileName(fileName)
+				.orElseThrow(() -> new ResourceNotFoundException("File not found"));
 
-			Path filePath = Paths.get(UPLOAD_DIR).resolve(fileName);
+		return mapToResponse(document);
+	}
 
-			if (!Files.exists(filePath)) {
-				throw new RuntimeException("File not found");
-			}
+	private FileResponse mapToResponse(FileDocument document) {
 
-			return new FileResponse(fileName, Files.probeContentType(filePath), Files.size(filePath),
-					"/api/files/download/" + fileName);
-
-		} catch (IOException e) {
-			throw new RuntimeException("Unable to read file");
-		}
+		return FileResponse.builder().id(document.getId()).originalFileName(document.getOriginalFileName())
+				.storedFileName(document.getStoredFileName()).fileType(document.getFileType())
+				.fileSize(document.getFileSize()).uploadedAt(document.getUploadedAt())
+				.downloadUrl("/api/files/download/" + document.getStoredFileName()).build();
 	}
 }

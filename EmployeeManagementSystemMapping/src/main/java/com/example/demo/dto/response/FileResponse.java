@@ -1,14 +1,31 @@
 package com.example.demo.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.time.LocalDateTime;
 
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class FileResponse {
 
-	private String fileName;
+	private Long id;
+
+	private String originalFileName;
+
+	private String storedFileName;
+
 	private String fileType;
-	private long size;
+
+	private Long fileSize;
+
+	private LocalDateTime uploadedAt;
+
 	private String downloadUrl;
 }
