@@ -19,11 +19,13 @@ import com.example.demo.dto.response.ProjectResponse;
 import com.example.demo.service.interfaces.ProjectService;
 import com.example.demo.util.ApiResponse;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/projects")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Validated
 public class ProjectController {
