@@ -7,13 +7,14 @@ import lombok.Data;
 @Data
 public class ResetPasswordRequest {
 
-	@Email
-	@NotBlank
+	@Email(message = "Invalid email format")
+	@NotBlank(message = "Email is required")
 	private String email;
 
-	@NotBlank
+	@NotBlank(message = "New password is required")
 	private String newPassword;
 
-	@NotBlank
+	@NotBlank(message = "Confirm password is required")
 	private String confirmPassword;
+
 }

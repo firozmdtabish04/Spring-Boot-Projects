@@ -21,6 +21,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class User {
 
 	@Id
@@ -39,5 +40,9 @@ public class User {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private Role role;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean enabled = false;
 
 }
