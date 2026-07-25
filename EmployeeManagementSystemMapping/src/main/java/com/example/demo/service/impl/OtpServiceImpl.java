@@ -2,13 +2,14 @@ package com.example.demo.service.impl;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.dto.request.EmailRequest;
 import com.example.demo.entity.Otp;
+import com.example.demo.exception.BadRequestException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.OtpRepository;
 import com.example.demo.service.interfaces.EmailService;
 import com.example.demo.service.interfaces.OtpService;
@@ -20,31 +21,42 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class OtpServiceImpl implements OtpService {
 
+	private static final SecureRandom RANDOM = new SecureRandom();
+
 	private final OtpRepository otpRepository;
 	private final EmailService emailService;
-
-	// Secure OTP Generator
-	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
 	@Override
 	public void sendOtp(String email) {
 
-		// Generate 6-digit OTP
-		String otp = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+		// Invalidate previous OTP if it exists
+		otpRepository.findTopByEmailOrderByCreatedAtDesc(email).ifPresent(existingOtp -> {
+			existingOtp.setVerified(false);
+			otpRepository.save(existingOtp);
+		});
 
-		// Save OTP
-		Otp otpEntity = Otp.builder().email(email).otp(otp).createdAt(LocalDateTime.now())
-				.expiryTime(LocalDateTime.now().plusMinutes(5)).verified(false).build();
+		String otp = generateOtp();
+
+		Otp otpEntity = Otp.builder().email(email).otp(otp).verified(false).createdAt(LocalDateTime.now())
+				.expiryTime(LocalDateTime.now().plusMinutes(5)).build();
 
 		otpRepository.save(otpEntity);
 
-		// Send Email
 		EmailRequest request = new EmailRequest();
 		request.setTo(email);
 		request.setSubject("OTP Verification");
-		request.setBody("Hello,\n\n" + "Your OTP for verification is: " + otp + "\n\n"
-				+ "This OTP is valid for 5 minutes.\n" + "Please do not share this OTP with anyone.\n\n" + "Regards,\n"
-				+ "Tabish Firoz  Healthcare Management System ");
+		request.setBody("""
+				Dear User,
+
+				Your OTP is: %s
+
+				This OTP is valid for 5 minutes.
+
+				Do not share this OTP with anyone.
+
+				Regards,
+				Employee Management System
+				""".formatted(otp));
 
 		emailService.sendEmail(request);
 	}
@@ -52,33 +64,28 @@ public class OtpServiceImpl implements OtpService {
 	@Override
 	public boolean verifyOtp(String email, String otp) {
 
-		Optional<Otp> optionalOtp = otpRepository.findTopByEmailOrderByCreatedAtDesc(email);
+		Otp savedOtp = otpRepository.findTopByEmailOrderByCreatedAtDesc(email)
+				.orElseThrow(() -> new ResourceNotFoundException("OTP not found."));
 
-		if (optionalOtp.isEmpty()) {
-			return false;
+		if (savedOtp.getVerified()) {
+			throw new BadRequestException("OTP already verified.");
 		}
 
-		Otp savedOtp = optionalOtp.get();
-
-		// Already verified
-		if (Boolean.TRUE.equals(savedOtp.getVerified())) {
-			return false;
-		}
-
-		// OTP expired
 		if (savedOtp.getExpiryTime().isBefore(LocalDateTime.now())) {
-			return false;
+			throw new BadRequestException("OTP has expired.");
 		}
 
-		// OTP mismatch
 		if (!savedOtp.getOtp().equals(otp)) {
-			return false;
+			throw new BadRequestException("Invalid OTP.");
 		}
 
-		// Mark verified
 		savedOtp.setVerified(true);
 		otpRepository.save(savedOtp);
 
 		return true;
+	}
+
+	private String generateOtp() {
+		return String.format("%06d", RANDOM.nextInt(1_000_000));
 	}
 }
