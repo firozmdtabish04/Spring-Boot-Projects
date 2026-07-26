@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Log Directory -->
+    <property name="LOG_PATH" value="logs"/>
+
+    <!-- ================= Console ================= -->
+
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
+            </pattern>
+        </encoder>
+
+    </appender>
+
+    <!-- ================= Application File ================= -->
+
+    <appender name="FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <file>${LOG_PATH}/application.log</file>
+
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <fileNamePattern>
+                ${LOG_PATH}/archive/application-%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+
+            <maxFileSize>10MB</maxFileSize>
+
+            <maxHistory>30</maxHistory>
+
+            <totalSizeCap>1GB</totalSizeCap>
+
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
+            </pattern>
+        </encoder>
+
+    </appender>
+
+    <!-- ================= Error File ================= -->
+
+    <appender name="ERROR_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <file>${LOG_PATH}/error.log</file>
+
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <fileNamePattern>
+                ${LOG_PATH}/archive/error-%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+
+            <maxFileSize>10MB</maxFileSize>
+
+            <maxHistory>30</maxHistory>
+
+            <totalSizeCap>1GB</totalSizeCap>
+
+        </rollingPolicy>
+
+        <!-- Only ERROR logs -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
+            </pattern>
+        </encoder>
+
+    </appender>
+
+    <!-- Debug logs for our application -->
+    <logger name="com.example.demo" level="DEBUG"/>
+
+    <!-- Root Logger -->
+    <root level="INFO">
+
+        <appender-ref ref="CONSOLE"/>
+
+        <appender-ref ref="FILE"/>
+
+        <appender-ref ref="ERROR_FILE"/>
+
+    </root>
+
+</configuration>

@@ -1,5 +1,7 @@
 package com.example.demo.service.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,20 +34,32 @@ public class AuthServiceImpl implements AuthService {
 	private final AuthenticationManager authenticationManager;
 	private final OtpService otpService;
 	private final OtpRepository otpRepository;
+	private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
 	@Override
 	public AuthResponse register(RegisterRequest request) {
 
+		logger.info("Registration request received for email: {}", request.getEmail());
+
 		if (userRepository.existsByEmail(request.getEmail())) {
+
+			logger.warn("Registration failed. Email already exists: {}", request.getEmail());
+
 			throw new DuplicateResourceException("Email already exists");
 		}
+
+		logger.debug("Encoding password for email: {}", request.getEmail());
 
 		User user = User.builder().name(request.getName()).email(request.getEmail())
 				.password(passwordEncoder.encode(request.getPassword())).role(request.getRole()).build();
 
 		userRepository.save(user);
 
+		logger.info("User registered successfully. User ID: {}", user.getId());
+
 		String token = jwtService.generateToken(user.getEmail());
+
+		logger.info("JWT token generated for {}", user.getEmail());
 
 		return AuthResponse.builder().token(token).message("User registered successfully").build();
 	}
@@ -53,13 +67,21 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public AuthResponse login(LoginRequest request) {
 
+		logger.info("Login attempt for email: {}", request.getEmail());
+
 		authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-		User user = userRepository.findByEmail(request.getEmail())
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+		User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> {
+
+			logger.error("Login failed. User not found: {}", request.getEmail());
+
+			return new ResourceNotFoundException("User not found");
+		});
 
 		String token = jwtService.generateToken(user.getEmail());
+
+		logger.info("User logged in successfully: {}", user.getEmail());
 
 		return AuthResponse.builder().token(token).message("Login successful").build();
 	}
@@ -67,26 +89,50 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public void forgotPassword(String email) {
 
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+		logger.info("Forgot password request received for {}", email);
+
+		User user = userRepository.findByEmail(email).orElseThrow(() -> {
+
+			logger.error("Forgot password failed. User not found: {}", email);
+
+			return new ResourceNotFoundException("User not found with email: " + email);
+		});
 
 		otpService.sendOtp(user.getEmail());
+
+		logger.info("Password reset OTP sent to {}", email);
 	}
 
 	@Override
 	public void resetPassword(String email, String newPassword, String confirmPassword) {
 
+		logger.info("Password reset started for {}", email);
+
 		if (!newPassword.equals(confirmPassword)) {
+
+			logger.warn("Password mismatch for {}", email);
+
 			throw new IllegalArgumentException("Passwords do not match.");
 		}
 
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+		User user = userRepository.findByEmail(email).orElseThrow(() -> {
 
-		Otp otp = otpRepository.findTopByEmailOrderByCreatedAtDesc(email)
-				.orElseThrow(() -> new ResourceNotFoundException("OTP not found."));
+			logger.error("Password reset failed. User not found: {}", email);
+
+			return new ResourceNotFoundException("User not found with email: " + email);
+		});
+
+		Otp otp = otpRepository.findTopByEmailOrderByCreatedAtDesc(email).orElseThrow(() -> {
+
+			logger.error("OTP not found for {}", email);
+
+			return new ResourceNotFoundException("OTP not found.");
+		});
 
 		if (!Boolean.TRUE.equals(otp.getVerified())) {
+
+			logger.warn("OTP not verified for {}", email);
+
 			throw new IllegalStateException("OTP is not verified.");
 		}
 
@@ -94,7 +140,8 @@ public class AuthServiceImpl implements AuthService {
 
 		userRepository.save(user);
 
-		// Prevent OTP reuse
 		otpRepository.delete(otp);
+
+		logger.info("Password updated successfully for {}", email);
 	}
 }
