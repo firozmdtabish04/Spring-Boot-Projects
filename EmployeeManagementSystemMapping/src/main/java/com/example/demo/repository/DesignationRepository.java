@@ -1,15 +1,17 @@
 package com.example.demo.repository;
 
-import java.util.Optional;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.demo.entity.Designation;
 
 public interface DesignationRepository extends JpaRepository<Designation, Long> {
 
-	Optional<Designation> findByDesignationName(String name);
+	boolean existsByDesignationNameIgnoreCase(String designationName);
 
-	boolean existsByDesignationName(String name);
+	boolean existsByDesignationNameIgnoreCaseAndIdNot(String designationName, Long id);
+
+	Page<Designation> findByDesignationNameContainingIgnoreCase(String keyword, Pageable pageable);
 
 }

@@ -1,7 +1,8 @@
 package com.example.demo.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.request.DesignationRequest;
@@ -40,12 +42,16 @@ public class DesignationController {
 	}
 
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<DesignationResponse>>> getAll() {
+	public ResponseEntity<ApiResponse<Page<DesignationResponse>>> getAllDesignations(
+			@RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size) {
 
-		return ResponseEntity.ok(ApiResponse.<List<DesignationResponse>>builder().success(true)
-				.message("Designation list fetched successfully").data(designationService.getAllDesignations())
-				.build());
+		Pageable pageable = PageRequest.of(page, size);
 
+		Page<DesignationResponse> designations = designationService.getAllDesignations(keyword, pageable);
+
+		return ResponseEntity.ok(ApiResponse.<Page<DesignationResponse>>builder().success(true)
+				.message("Fetched Successfully").data(designations).build());
 	}
 
 	@GetMapping("/{id}")
